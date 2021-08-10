@@ -2,4 +2,8 @@ name: 'athena_facebook_ads'
 version: '0.1.0'
 config-version: 2
 
+dispatch:
+  - macro_namespace: dbt_utils
+    search_order: [athena_utils, dbt_utils]
+
 require-dbt-version: ">=0.20.0"
