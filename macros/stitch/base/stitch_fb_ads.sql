@@ -18,8 +18,14 @@ select distinct
     nullif(campaign_id,'') as campaign_id,
     nullif(name,'') as name,
     nullif({{ facebook_ads.nested_field('creative',['id']) }}, '') as creative_id,
-    created_time as created_at,
-    updated_time as updated_at
+    case
+        when typeof(created_time) = 'varchar' then cast(from_iso8601_timestamp(created_time) as timestamp)
+        else cast(created_time as timestamp)
+    end as created_at,
+    case
+        when typeof(updated_time) = 'varchar' then cast(from_iso8601_timestamp(updated_time) as timestamp)
+        else cast(updated_time as timestamp)
+    end as updated_at
 
 from {{ var('ads_table') }}
 
