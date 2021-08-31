@@ -19,6 +19,35 @@ child_links as (
 
 ),
 
+latest_base as (
+
+    select 
+
+        id,
+
+        max(_sdc_sequence) AS sequence,
+        max(_sdc_batched_at) as batched_at
+
+    from base
+    group by 1
+
+),
+
+dedup_base as (
+
+    select
+
+    base.*
+
+    from base
+    inner join latest_base
+
+        on base.id = latest_base.id
+        and base._sdc_sequence = latest_base.sequence
+        and base._sdc_batched_at = latest_base.batched_at
+
+),
+
 links_joined as (
 
     select
@@ -27,16 +56,16 @@ links_joined as (
 
         lower(coalesce(
           nullif(child_link, ''),
-          nullif({{ facebook_ads.nested_field('base.object_story_spec', ['link_data', 'call_to_action', 'value', 'link']) }}, ''),
-          nullif({{ facebook_ads.nested_field('base.object_story_spec', ['video_data', 'call_to_action', 'value', 'link']) }}, ''),
-          nullif({{ facebook_ads.nested_field('base.object_story_spec', ['link_data', 'link']) }}, '')
+          nullif({{ facebook_ads.nested_field('dedup_base.object_story_spec', ['link_data', 'call_to_action', 'value', 'link']) }}, ''),
+          nullif({{ facebook_ads.nested_field('dedup_base.object_story_spec', ['video_data', 'call_to_action', 'value', 'link']) }}, ''),
+          nullif({{ facebook_ads.nested_field('dedup_base.object_story_spec', ['link_data', 'link']) }}, '')
         )) as url,
 
         url_tags
 
-    from base
+    from dedup_base
     left join child_links
-        on base.id = child_links.creative_id
+        on dedup_base.id = child_links.creative_id
 
 ),
 
